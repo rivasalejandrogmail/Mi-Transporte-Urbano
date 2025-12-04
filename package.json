@@ -1,0 +1,20 @@
+{
+  "name": "mi-transporte-urbano-ios",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "cap sync",
+    "cap:init": "cap init 'MiTransporteUrbano' 'ar.mtu.app' --web-dir=public --npm-client=npm || true",
+    "cap:add:ios": "cap add ios || true",
+    "cap:sync": "cap sync",
+    "ios:open": "cap open ios",
+    "ios:build": "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -derivedDataPath ios/build",
+    "prepare": "echo 'Ready'"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.1.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.0"
+  }
+}

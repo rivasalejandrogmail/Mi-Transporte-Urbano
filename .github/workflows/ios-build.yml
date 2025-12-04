@@ -1,0 +1,29 @@
+name: iOS Build (Capacitor)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm run cap:init
+      - run: npm run cap:add:ios
+      - run: npm run cap:sync
+      - name: Build Xcode (no sign)
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace             -scheme App -configuration Release             -derivedDataPath ios/build             CODE_SIGNING_ALLOWED=NO
+      - name: Zip App bundle
+        run: |
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent ios/build/Build/Products/Release-iphoneos/App.app artifacts/App.app.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-unsigned
+          path: artifacts/App.app.zip
