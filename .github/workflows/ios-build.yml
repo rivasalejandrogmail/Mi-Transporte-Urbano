@@ -1,4 +1,4 @@
-name: iOS Build (Capacitor)
+name: iOS Build (Capacitor v6)
 
 on:
   workflow_dispatch:
@@ -14,33 +14,30 @@ jobs:
         with:
           node-version: 18
 
-      # 0) Quitar postinstall para que no rompa durante npm install
+      # Quitar postinstall para evitar 'cap sync' temprano
       - name: Patch package.json (remove postinstall)
         run: |
-          node -e "let p=require('./package.json'); if(p.scripts && p.scripts.postinstall){ delete p.scripts.postinstall; require('fs').writeFileSync('package.json', JSON.stringify(p,null,2)); } console.log('postinstall removed (if existed)');"
+          node -e "let p=require('./package.json'); if(p.scripts&&p.scripts.postinstall){delete p.scripts.postinstall; require('fs').writeFileSync('package.json', JSON.stringify(p,null,2));} console.log('postinstall removed');"
 
-      # 1) Instalar deps sin correr scripts; agregar TypeScript y @capacitor/ios
-      - name: Install deps + Capacitor iOS
+      # Instalar deps + TypeScript + Capacitor v6
+      - name: Install deps (Capacitor v6)
         run: |
           npm install --no-fund --no-audit --ignore-scripts
-          npm i -D typescript @capacitor/ios
-          npm i -g @capacitor/cli
+          npm i -D typescript
+          npm i -D @capacitor/ios@6
+          npm i -g @capacitor/cli@6
 
-      # 2) Agregar iOS si no existe y sincronizar
-      - name: Add & Sync iOS (Capacitor)
+      # Generar iOS y sincronizar (Capacitor v6)
+      - name: Add & Sync iOS
         run: |
-          if [ ! -d "ios" ]; then
-            npx cap add ios
-          fi
+          npx cap add ios || true
           npx cap sync ios
 
-      # 3) CocoaPods
       - name: Install CocoaPods
         run: |
           sudo gem install cocoapods -N
           cd ios/App && pod install --repo-update
 
-      # 4) Build sin firma
       - name: Build (no code signing)
         run: |
           xcodebuild -workspace ios/App/App.xcworkspace \
@@ -49,7 +46,6 @@ jobs:
             -derivedDataPath ios/build \
             CODE_SIGNING_ALLOWED=NO
 
-      # 5) Empaquetar .ipa para AltStore
       - name: Make unsigned IPA (for AltStore)
         run: |
           rm -rf Payload
@@ -57,7 +53,6 @@ jobs:
           cp -R ios/build/Build/Products/Release-iphoneos/App.app Payload/
           zip -r MiTransporteUrbano.ipa Payload
 
-      # 6) Publicar artefacto
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
