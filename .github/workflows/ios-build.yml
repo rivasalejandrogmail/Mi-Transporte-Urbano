@@ -14,9 +14,9 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install npm deps
+      - name: Install npm deps (no lockfile)
         run: |
-          npm ci
+          npm install --no-fund --no-audit
           npm i -g @capacitor/cli
 
       - name: Generate iOS project (Capacitor)
