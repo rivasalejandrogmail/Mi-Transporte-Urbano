@@ -5,25 +5,48 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-13
+    runs-on: macos-15
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - run: npm ci
-      - run: npm run cap:init
-      - run: npm run cap:add:ios
-      - run: npm run cap:sync
-      - name: Build Xcode (no sign)
+
+      - name: Install npm deps
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace             -scheme App -configuration Release             -derivedDataPath ios/build             CODE_SIGNING_ALLOWED=NO
-      - name: Zip App bundle
+          npm ci
+          npm i -g @capacitor/cli
+
+      - name: Generate iOS project (Capacitor)
         run: |
-          mkdir -p artifacts
-          ditto -c -k --sequesterRsrc --keepParent ios/build/Build/Products/Release-iphoneos/App.app artifacts/App.app.zip
+          npx cap init "MiTransporteUrbano" "ar.mtu.app" --web-dir=public --npm-client=npm || true
+          npx cap add ios || true
+          npx cap sync ios
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods -N
+          cd ios/App && pod install --repo-update
+
+      - name: Build (no code signing)
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Make unsigned IPA (for AltStore)
+        run: |
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R ios/build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -r MiTransporteUrbano.ipa Payload
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-app-unsigned
-          path: artifacts/App.app.zip
+          name: ios-ipa-unsigned
+          path: MiTransporteUrbano.ipa
