@@ -14,9 +14,10 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install npm deps (no lockfile)
+      - name: Install npm deps (add TypeScript)
         run: |
-          npm install --no-fund --no-audit
+          npm install --no-fund --no-audit --ignore-scripts
+          npm i -D typescript
           npm i -g @capacitor/cli
 
       - name: Generate iOS project (Capacitor)
